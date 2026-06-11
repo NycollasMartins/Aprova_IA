@@ -1,0 +1,26 @@
+# Mantém o contexto de build pequeno e evita vazar segredos/artefatos.
+node_modules
+dist
+.output
+.vinxi
+.nitro
+.tanstack
+.git
+.gitignore
+
+# Segredos — NUNCA entram na imagem. As VITE_* vão por build args.
+.env
+.env.*
+!.env.example
+
+# Lixo de SO/editor
+.DS_Store
+.vscode
+.idea
+*.log
+npm-debug.log*
+
+# Docs/infra que não afetam o runtime
+Dockerfile
+.dockerignore
+README*.md
