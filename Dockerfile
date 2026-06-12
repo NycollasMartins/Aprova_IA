@@ -35,11 +35,13 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOST=0.0.0.0
 
-# O bundle do servidor é autocontido: só precisamos do build e do server.mjs
-# (que usa apenas APIs nativas do Node — sem node_modules em runtime).
+# O bundle SSR NÃO é autocontido: ele externaliza dependências em runtime
+# (h3-v2, react, @tanstack/*, @radix-ui/*, @supabase/supabase-js, recharts…).
+# Por isso o node_modules precisa estar presente. Reaproveitamos o do build.
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server.mjs ./server.mjs
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 3000
 CMD ["node", "server.mjs"]
