@@ -3,18 +3,28 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 function createSupabaseClient() {
-  // Use import.meta.env for client-side (Vite build-time replacement)
-  // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-  const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+  // import.meta.env.VITE_* é substituído em BUILD-TIME (precisa estar presente
+  // quando o `vite build` roda). process.env.* é lido em runtime (SSR).
+  // Aceitamos tanto PUBLISHABLE_KEY (nome novo) quanto ANON_KEY (nome clássico)
+  // — são a mesma chave pública (anon). NUNCA use a service_role aqui.
+  const SUPABASE_URL =
+    import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const SUPABASE_PUBLISHABLE_KEY =
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    import.meta.env.VITE_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
-      ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
-      ...(!SUPABASE_PUBLISHABLE_KEY ? ['SUPABASE_PUBLISHABLE_KEY'] : []),
+      ...(!SUPABASE_URL ? ['VITE_SUPABASE_URL'] : []),
+      ...(!SUPABASE_PUBLISHABLE_KEY ? ['VITE_SUPABASE_PUBLISHABLE_KEY (ou VITE_SUPABASE_ANON_KEY)'] : []),
     ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in Lovable Cloud.`;
-    console.error(`[Supabase] ${message}`);
+    const message =
+      `[Supabase] Variável(is) de ambiente ausente(s): ${missing.join(', ')}. ` +
+      `Como começam com VITE_, precisam estar definidas NO MOMENTO DO BUILD ` +
+      `(build args do Docker/EasyPanel), não só em runtime. Veja .env.example e DEPLOY.md.`;
+    console.error(message);
     throw new Error(message);
   }
 

@@ -30,11 +30,20 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
     return response;
   }
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
-  return new Response(renderErrorPage(), {
+  const captured = consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`);
+  console.error(captured);
+  return new Response(renderErrorPage(ssrErrorDetail(captured)), {
     status: 500,
     headers: { "content-type": "text/html; charset=utf-8" },
   });
+}
+
+// DEBUG_SSR_ERRORS=1 → revela o stack real na página de erro (só p/ diagnóstico).
+function ssrErrorDetail(error: unknown): string | undefined {
+  const on = typeof process !== "undefined" && Boolean(process.env?.DEBUG_SSR_ERRORS);
+  if (!on) return undefined;
+  if (error instanceof Error) return error.stack || error.message;
+  return String(error);
 }
 
 export default {
@@ -45,7 +54,7 @@ export default {
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
-      return new Response(renderErrorPage(), {
+      return new Response(renderErrorPage(ssrErrorDetail(error)), {
         status: 500,
         headers: { "content-type": "text/html; charset=utf-8" },
       });
