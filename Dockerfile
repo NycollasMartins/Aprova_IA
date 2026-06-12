@@ -9,11 +9,14 @@ WORKDIR /app
 
 # As variáveis VITE_* são embutidas no bundle do CLIENTE em build-time.
 # No EasyPanel, passe-as em "Build" → "Build Args" (não como env de runtime).
+# A chave pública aceita os dois nomes: PUBLISHABLE_KEY (novo) ou ANON_KEY (clássico).
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_PUBLISHABLE_KEY
+ARG VITE_SUPABASE_ANON_KEY
 ARG VITE_SUPABASE_PROJECT_ID
 ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
     VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY \
+    VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY \
     VITE_SUPABASE_PROJECT_ID=$VITE_SUPABASE_PROJECT_ID
 
 # Instala dependências (inclui devDependencies, necessárias para o build).
