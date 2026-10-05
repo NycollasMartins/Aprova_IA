@@ -14,6 +14,257 @@ export type Database = {
   }
   public: {
     Tables: {
+      concursos: {
+        Row: {
+          ano: number | null
+          area: string | null
+          ativo: boolean
+          banca: string | null
+          cargo: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          nome: string
+          orgao: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ano?: number | null
+          area?: string | null
+          ativo?: boolean
+          banca?: string | null
+          cargo?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome: string
+          orgao?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: number | null
+          area?: string | null
+          ativo?: boolean
+          banca?: string | null
+          cargo?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome?: string
+          orgao?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      editais: {
+        Row: {
+          concurso_id: string
+          created_at: string
+          created_by: string | null
+          data_prova: string | null
+          data_publicacao: string | null
+          id: string
+          resumo_mudancas: string | null
+          tipo: string
+          titulo: string | null
+          updated_at: string
+          versao: number
+          vigente: boolean
+        }
+        Insert: {
+          concurso_id: string
+          created_at?: string
+          created_by?: string | null
+          data_prova?: string | null
+          data_publicacao?: string | null
+          id?: string
+          resumo_mudancas?: string | null
+          tipo?: string
+          titulo?: string | null
+          updated_at?: string
+          versao?: number
+          vigente?: boolean
+        }
+        Update: {
+          concurso_id?: string
+          created_at?: string
+          created_by?: string | null
+          data_prova?: string | null
+          data_publicacao?: string | null
+          id?: string
+          resumo_mudancas?: string | null
+          tipo?: string
+          titulo?: string | null
+          updated_at?: string
+          versao?: number
+          vigente?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editais_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      edital_materias: {
+        Row: {
+          created_at: string
+          edital_id: string
+          id: string
+          nome: string
+          ordem: number
+          peso: number | null
+        }
+        Insert: {
+          created_at?: string
+          edital_id: string
+          id?: string
+          nome: string
+          ordem?: number
+          peso?: number | null
+        }
+        Update: {
+          created_at?: string
+          edital_id?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          peso?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "edital_materias_edital_id_fkey"
+            columns: ["edital_id"]
+            isOneToOne: false
+            referencedRelation: "editais"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      edital_topicos: {
+        Row: {
+          codigo: string | null
+          created_at: string
+          edital_id: string
+          id: string
+          materia_id: string
+          ordem: number
+          titulo: string
+        }
+        Insert: {
+          codigo?: string | null
+          created_at?: string
+          edital_id: string
+          id?: string
+          materia_id: string
+          ordem?: number
+          titulo: string
+        }
+        Update: {
+          codigo?: string | null
+          created_at?: string
+          edital_id?: string
+          id?: string
+          materia_id?: string
+          ordem?: number
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "edital_topicos_edital_id_fkey"
+            columns: ["edital_id"]
+            isOneToOne: false
+            referencedRelation: "editais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edital_topicos_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "edital_materias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_concursos: {
+        Row: {
+          ativo: boolean
+          concurso_id: string
+          created_at: string
+          id: string
+          last_seen_edital_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          concurso_id: string
+          created_at?: string
+          id?: string
+          last_seen_edital_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          concurso_id?: string
+          created_at?: string
+          id?: string
+          last_seen_edital_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_concursos_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_topico_progresso: {
+        Row: {
+          concluido: boolean
+          concluido_at: string
+          created_at: string
+          id: string
+          topico_id: string
+          user_id: string
+        }
+        Insert: {
+          concluido?: boolean
+          concluido_at?: string
+          created_at?: string
+          id?: string
+          topico_id: string
+          user_id: string
+        }
+        Update: {
+          concluido?: boolean
+          concluido_at?: string
+          created_at?: string
+          id?: string
+          topico_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_topico_progresso_topico_id_fkey"
+            columns: ["topico_id"]
+            isOneToOne: false
+            referencedRelation: "edital_topicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           age: number | null
@@ -34,9 +285,12 @@ export type Database = {
           hours_per_day: number | null
           id: string
           level: string | null
+          minutos_por_topico: number
           notifications_enabled: boolean | null
           onboarding_completed: boolean
           reminders_enabled: boolean | null
+          revisao_intervalos: number[]
+          revisao_modo: string
           reviews_enabled: boolean | null
           routine_notes: string | null
           state: string | null
@@ -64,9 +318,12 @@ export type Database = {
           hours_per_day?: number | null
           id: string
           level?: string | null
+          minutos_por_topico?: number
           notifications_enabled?: boolean | null
           onboarding_completed?: boolean
           reminders_enabled?: boolean | null
+          revisao_intervalos?: number[]
+          revisao_modo?: string
           reviews_enabled?: boolean | null
           routine_notes?: string | null
           state?: string | null
@@ -94,9 +351,12 @@ export type Database = {
           hours_per_day?: number | null
           id?: string
           level?: string | null
+          minutos_por_topico?: number
           notifications_enabled?: boolean | null
           onboarding_completed?: boolean
           reminders_enabled?: boolean | null
+          revisao_intervalos?: number[]
+          revisao_modo?: string
           reviews_enabled?: boolean | null
           routine_notes?: string | null
           state?: string | null
@@ -142,32 +402,47 @@ export type Database = {
       }
       revisions: {
         Row: {
+          acerto_pct: number | null
           completed: boolean
+          concurso_id: string | null
           created_at: string
           due_date: string
           id: string
+          intervalo_dias: number | null
           notes: string | null
+          origem: string
           subject: string
+          topico_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          acerto_pct?: number | null
           completed?: boolean
+          concurso_id?: string | null
           created_at?: string
           due_date: string
           id?: string
+          intervalo_dias?: number | null
           notes?: string | null
+          origem?: string
           subject: string
+          topico_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          acerto_pct?: number | null
           completed?: boolean
+          concurso_id?: string | null
           created_at?: string
           due_date?: string
           id?: string
+          intervalo_dias?: number | null
           notes?: string | null
+          origem?: string
           subject?: string
+          topico_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -175,6 +450,7 @@ export type Database = {
       }
       study_sessions: {
         Row: {
+          concurso_id: string | null
           created_at: string
           duration_min: number
           id: string
@@ -182,10 +458,13 @@ export type Database = {
           scheduled_at: string
           status: string
           subject: string
+          tipo: string
+          topico_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          concurso_id?: string | null
           created_at?: string
           duration_min?: number
           id?: string
@@ -193,10 +472,13 @@ export type Database = {
           scheduled_at: string
           status?: string
           subject: string
+          tipo?: string
+          topico_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          concurso_id?: string | null
           created_at?: string
           duration_min?: number
           id?: string
@@ -204,6 +486,8 @@ export type Database = {
           scheduled_at?: string
           status?: string
           subject?: string
+          tipo?: string
+          topico_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -238,6 +522,12 @@ export type Database = {
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: {
+        Args: {
           _user_id: string
         }
         Returns: boolean

@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useProfile";
-import { detectArea, useArea } from "@/contexts/ThemeContext";
+import { useArea, ConcursoArea } from "@/contexts/ThemeContext";
+import { ConcursoCatalogList } from "@/components/ConcursoCatalogList";
 import { toast } from "sonner";
 import { ArrowRight, ArrowLeft, Loader2, Sparkles } from "lucide-react";
 
@@ -18,7 +19,6 @@ export const Route = createFileRoute("/onboarding")({
 const STEPS = [
   { key: "identidade", label: "Identidade", greeting: "Para começar, como deseja ser chamado?" },
   { key: "vida", label: "Sua rotina", greeting: "Vamos entender como é o seu dia." },
-  { key: "formacao", label: "Formação", greeting: "Sua formação ajuda a IA a calibrar o plano." },
   { key: "objetivo", label: "Objetivo", greeting: "Agora o mais importante: seu sonho." },
 ];
 
@@ -31,9 +31,6 @@ interface Answers {
   has_children: boolean | null;
   hours_per_day: string;
   routine_notes: string;
-  has_degree: boolean | null;
-  degree_name: string;
-  degree_area: string;
   target_concurso: string;
   studied_before: boolean | null;
   feeling: string;
@@ -47,10 +44,10 @@ function OnboardingPage() {
   const { setArea } = useArea();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [concursoId, setConcursoId] = useState<string | null>(null);
   const [a, setA] = useState<Answers>({
     display_name: "", age: "", city: "", state: "",
     works: null, has_children: null, hours_per_day: "4", routine_notes: "",
-    has_degree: null, degree_name: "", degree_area: "",
     target_concurso: "", studied_before: null, feeling: "",
     exam_date: "", level: "intermediario",
   });
@@ -75,9 +72,6 @@ function OnboardingPage() {
           has_children: data.has_children ?? prev.has_children,
           hours_per_day: data.hours_per_day != null ? String(data.hours_per_day) : prev.hours_per_day,
           routine_notes: data.routine_notes ?? prev.routine_notes,
-          has_degree: data.has_degree ?? prev.has_degree,
-          degree_name: data.degree_name ?? prev.degree_name,
-          degree_area: data.degree_area ?? prev.degree_area,
           target_concurso: data.target_concurso ?? prev.target_concurso,
           studied_before: data.studied_before ?? prev.studied_before,
           feeling: data.feeling ?? prev.feeling,
@@ -98,8 +92,20 @@ function OnboardingPage() {
       nav({ to: "/login", replace: true });
       return;
     }
+    if (!concursoId) {
+      toast.error("Selecione um concurso do catálogo.");
+      return;
+    }
     setSaving(true);
-    const area = detectArea(a.target_concurso);
+
+    // Busca o concurso (área) e o edital vigente (data da prova) para
+    // matricular o aluno e espelhar no profile (mantém telas legadas).
+    const [{ data: concurso }, { data: edital }] = await Promise.all([
+      supabase.from("concursos").select("nome, area").eq("id", concursoId).maybeSingle(),
+      supabase.from("editais").select("id, data_prova").eq("concurso_id", concursoId).eq("vigente", true).maybeSingle(),
+    ]);
+    const area = (concurso?.area as ConcursoArea) ?? "neutro";
+
     const payload = {
       display_name: a.display_name || null,
       age: a.age ? Number(a.age) : null,
@@ -109,20 +115,24 @@ function OnboardingPage() {
       has_children: a.has_children,
       hours_per_day: a.hours_per_day ? Number(a.hours_per_day) : null,
       routine_notes: a.routine_notes || null,
-      has_degree: a.has_degree,
-      degree_name: a.degree_name || null,
-      degree_area: a.degree_area || null,
-      target_concurso: a.target_concurso || null,
+      target_concurso: concurso?.nome ?? null,
       concurso_area: area,
-      exam_date: a.exam_date || null,
+      exam_date: edital?.data_prova ?? null,
       level: a.level,
       studied_before: a.studied_before,
       feeling: a.feeling || null,
       onboarding_completed: true,
     };
 
-    const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
+    const [{ error: pErr }, { error: ucErr }] = await Promise.all([
+      supabase.from("profiles").update(payload).eq("id", user.id),
+      supabase.from("user_concursos").upsert(
+        { user_id: user.id, concurso_id: concursoId, ativo: true, last_seen_edital_id: edital?.id ?? null },
+        { onConflict: "user_id,concurso_id" },
+      ),
+    ]);
     setSaving(false);
+    const error = pErr || ucErr;
     if (error) { toast.error("Erro ao salvar: " + error.message); return; }
     setArea(area);
     toast.success("Plano configurado! Bem-vindo ao AprovaIA.");
@@ -132,8 +142,7 @@ function OnboardingPage() {
   const canNext =
     (step === 0 && a.display_name.trim().length > 0) ||
     (step === 1 && a.works !== null && Number(a.hours_per_day) > 0) ||
-    (step === 2 && a.has_degree !== null) ||
-    (step === 3 && a.target_concurso.trim().length > 0);
+    (step === 2 && !!concursoId);
 
   if (sessionLoading) {
     return <div className="grid min-h-screen place-items-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
@@ -199,30 +208,13 @@ function OnboardingPage() {
 
             {step === 2 && (
               <>
-                <Field label="Possui graduação?">
-                  <Choice value={a.has_degree} onChange={(v) => setField("has_degree", v)} options={[{ v: true, l: "Sim" }, { v: false, l: "Ainda não" }]} />
+                <Field label="Qual concurso você deseja? (escolha do catálogo)">
+                  <ConcursoCatalogList selectedId={concursoId} onSelect={setConcursoId} />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    A data da prova e os tópicos vêm do edital vigente — você não precisa digitar.
+                  </p>
                 </Field>
-                {a.has_degree && (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Qual graduação?"><Input value={a.degree_name} onChange={(e) => setField("degree_name", e.target.value)} placeholder="Ex.: Direito" /></Field>
-                    <Field label="Área de formação"><Input value={a.degree_area} onChange={(e) => setField("degree_area", e.target.value)} placeholder="Humanas, Exatas..." /></Field>
-                  </div>
-                )}
-              </>
-            )}
-
-            {step === 3 && (
-              <>
-                <Field label="Qual concurso você deseja?">
-                  <Input value={a.target_concurso} onChange={(e) => setField("target_concurso", e.target.value)} placeholder="Ex.: PRF, TRT-SP, Receita Federal" />
-                  {a.target_concurso && (
-                    <p className="mt-2 text-xs text-primary">
-                      Detectamos área: <strong className="capitalize">{detectArea(a.target_concurso)}</strong>. O visual vai se adaptar.
-                    </p>
-                  )}
-                </Field>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Data da prova (opcional)"><Input type="date" value={a.exam_date} onChange={(e) => setField("exam_date", e.target.value)} /></Field>
+                <div className="grid gap-4 sm:grid-cols-1">
                   <Field label="Seu nível">
                     <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={a.level} onChange={(e) => setField("level", e.target.value)}>
                       <option value="iniciante">Iniciante</option>

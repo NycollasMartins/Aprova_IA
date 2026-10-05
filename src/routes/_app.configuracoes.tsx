@@ -10,9 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useConcurso } from "@/contexts/ConcursoContext";
+import { ConcursoCatalogList } from "@/components/ConcursoCatalogList";
 // LogoutDialog removido — login desativado (BLOCO 1)
 import { toast } from "sonner";
-import { Loader2, Upload, KeyRound } from "lucide-react";
+import { Loader2, Upload, KeyRound, GraduationCap, Hourglass, CalendarClock } from "lucide-react";
 
 export const Route = createFileRoute("/_app/configuracoes")({
   head: () => ({ meta: [{ title: "Configurações — AprovaIA" }] }),
@@ -174,28 +177,8 @@ function Configuracoes() {
                 <CardDescription>Seu concurso, formação e nível</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <ConcursoEstudoBlock />
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Concurso atual">
-                    <Input
-                      value={form.target_concurso ?? ""}
-                      onChange={(e) => set("target_concurso")(e.target.value)}
-                      placeholder="Ex: Polícia Federal — Agente"
-                    />
-                  </Field>
-                  <Field label="Data da prova">
-                    <Input
-                      type="date"
-                      value={form.exam_date ?? ""}
-                      onChange={(e) => set("exam_date")(e.target.value)}
-                    />
-                  </Field>
-                  <Field label="Escolaridade / Graduação">
-                    <Input
-                      value={form.degree_name ?? ""}
-                      onChange={(e) => set("degree_name")(e.target.value)}
-                      placeholder="Ex: Direito, Ensino Médio..."
-                    />
-                  </Field>
                   <Field label="Horas por dia">
                     <Input
                       type="number"
@@ -228,9 +211,6 @@ function Configuracoes() {
                   <Button
                     onClick={() =>
                       saveTab("estudos", [
-                        "target_concurso",
-                        "exam_date",
-                        "degree_name",
                         "hours_per_day",
                         "level",
                         "routine_notes",
@@ -313,6 +293,70 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-2">
       <Label>{label}</Label>
       {children}
+    </div>
+  );
+}
+
+/**
+ * Bloco do concurso na aba Estudos: mostra o concurso ativo + status (vindo do
+ * edital vigente) e permite trocar escolhendo outro do catálogo. A data da
+ * prova e os tópicos vêm do edital — não são mais digitados aqui.
+ */
+function ConcursoEstudoBlock() {
+  const { active, status, examDate, selectConcurso } = useConcurso();
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  async function pick(id: string) {
+    setSaving(true);
+    const { error } = await selectConcurso(id);
+    setSaving(false);
+    setOpen(false);
+    if (error) toast.error(error.message);
+    else toast.success("Concurso atualizado.");
+  }
+
+  const daysLeft = examDate
+    ? Math.max(0, Math.ceil((new Date(examDate).getTime() - Date.now()) / 86400000))
+    : null;
+
+  return (
+    <div className="rounded-xl border border-border bg-card/50 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-primary text-primary-foreground">
+            <GraduationCap className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">Concurso atual</div>
+            <div className="font-semibold">{active ? active.concurso.nome : "Nenhum selecionado"}</div>
+            {active && status === "pre_edital" && (
+              <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-warning">
+                <Hourglass className="h-3 w-3" /> PRÉ-EDITAL — edital ainda não publicado
+              </span>
+            )}
+            {active && status === "com_data" && daysLeft !== null && (
+              <span className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                <CalendarClock className="h-3 w-3 text-primary" /> Prova em {daysLeft} dias
+              </span>
+            )}
+          </div>
+        </div>
+        <Button variant="outline" onClick={() => setOpen(true)} disabled={saving}>
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : active ? "Trocar concurso" : "Escolher concurso"}
+        </Button>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5 text-primary" /> Escolher concurso
+            </DialogTitle>
+          </DialogHeader>
+          <ConcursoCatalogList selectedId={active?.concurso.id ?? null} onSelect={pick} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

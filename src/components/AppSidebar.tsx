@@ -6,6 +6,7 @@ import {
   RotateCcw,
   TrendingUp,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Logo } from "./Logo";
 import { AreaSwitcher } from "./AreaSwitcher";
+import { useRole } from "@/hooks/useRole";
 
 const main = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -37,6 +39,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isActive = (p: string) => pathname === p || pathname.startsWith(p + "/");
+  const { isAdmin } = useRole();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -72,6 +75,16 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-2">
         <SidebarMenu>
+          {isAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Admin" isActive={isActive("/admin")}>
+                <Link to="/admin">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Admin</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Configurações" isActive={isActive("/configuracoes")}>
               <Link to="/configuracoes">

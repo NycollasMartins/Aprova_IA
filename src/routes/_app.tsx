@@ -5,6 +5,9 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AreaAmbientLayer } from "@/components/AreaAmbience";
 import { useProfile } from "@/hooks/useProfile";
+import { ConcursoProvider } from "@/contexts/ConcursoContext";
+import { StudyTimerProvider } from "@/contexts/StudyTimerContext";
+import { EditalChangePopup } from "@/components/EditalChangePopup";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -35,14 +38,19 @@ function AppLayout() {
   }
 
   return (
-    <SidebarProvider>
-      <AreaAmbientLayer />
-      <div className="relative flex min-h-screen w-full">
-        <AppSidebar />
-        <SidebarInset className="flex min-w-0 flex-1 flex-col bg-transparent">
-          <Outlet />
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+    <ConcursoProvider>
+      <StudyTimerProvider>
+      <SidebarProvider>
+        <AreaAmbientLayer />
+        <EditalChangePopup />
+        <div className="relative flex min-h-screen w-full">
+          <AppSidebar />
+          <SidebarInset className="flex min-w-0 flex-1 flex-col bg-transparent">
+            <Outlet />
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
+      </StudyTimerProvider>
+    </ConcursoProvider>
   );
 }

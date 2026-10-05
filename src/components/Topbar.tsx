@@ -2,6 +2,8 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfile } from "@/hooks/useProfile";
 import { Link } from "@tanstack/react-router";
+import { ConcursoSelector } from "@/components/ConcursoSelector";
+import { StudyTimerWidget } from "@/components/StudyTimerWidget";
 
 export function Topbar({ title, subtitle }: { title: string; subtitle?: string }) {
   const { profile } = useProfile();
@@ -21,6 +23,8 @@ export function Topbar({ title, subtitle }: { title: string; subtitle?: string }
         {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
       </div>
       <div className="ml-auto flex items-center gap-2">
+        <StudyTimerWidget />
+        <ConcursoSelector />
         <Link
           to="/configuracoes"
           className="flex items-center gap-2 rounded-xl border border-border bg-card/60 py-1 pl-1 pr-3 hover:bg-accent transition"
